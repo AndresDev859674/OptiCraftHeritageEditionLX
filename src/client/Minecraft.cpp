@@ -1799,6 +1799,9 @@ void Minecraft::runTick()
 
     if (currentScreen != nullptr)
     {
+#if PLATFORM_PS2
+        ps2SetMenuPad(isScreenOwnedByPlayer2() ? 1 : 0);
+#endif
         GuiScreen *screenBefore = currentScreen;
         currentScreen->handleInput();
         if (currentScreen != nullptr && currentScreen == screenBefore)
@@ -1807,6 +1810,9 @@ void Minecraft::runTick()
                 currentScreen->guiParticles->updateParticles();
             currentScreen->updateScreen();
         }
+#if PLATFORM_PS2
+        ps2SetMenuPad(0);
+#endif
     }
     else
     {
@@ -1822,7 +1828,9 @@ void Minecraft::runTick()
             {
                 closePlayerScreen(0);
             }
-            else if ((pad0PressedInTick & PS2_PAD_SQUARE) && dynamic_cast<GuiInventory *>(getPlayerScreen(0)) != nullptr)
+            else if ((pad0PressedInTick & PS2_PAD_SQUARE) &&
+                     (dynamic_cast<GuiInventory *>(getPlayerScreen(0)) != nullptr ||
+                      dynamic_cast<GuiContainerCreative *>(getPlayerScreen(0)) != nullptr))
             {
                 closePlayerScreen(0);
             }
@@ -2310,6 +2318,25 @@ void Minecraft::usePortal(int_t targetDimension)
     }
 
 #if PLATFORM_RELEASE_OLD_WORLD_BEFORE_PORTAL
+    for (int pIdx = 0; pIdx < 2; ++pIdx)
+    {
+        if (playerScreens[pIdx] != nullptr)
+        {
+            playerScreens[pIdx]->onGuiClosed();
+            guiScreensToDelete.push_back(playerScreens[pIdx]);
+            playerScreens[pIdx] = nullptr;
+        }
+    }
+    if (thePlayer2 != nullptr)
+    {
+        if (oldWorld != nullptr && oldWorld->getWorldInfo() != nullptr)
+        {
+            NBTTagCompound *p2Tag = new NBTTagCompound();
+            thePlayer2->writeToNBT(p2Tag);
+            oldWorld->getWorldInfo()->setPlayer2NBTTagCompound(p2Tag);
+        }
+        oldWorld->detachEntityForWorldChange(thePlayer2);
+    }
     oldWorld->detachEntityForWorldChange(thePlayer);
     oldWorld->saveWorldIndirectly(loadingScreen);
     renderViewEntity = nullptr;
@@ -2351,18 +2378,6 @@ void Minecraft::changeWorld(World *world, const std::string &s, EntityPlayerSP *
     EntityPlayerSP *transferredPlayer = entityplayer;
     if (transferredPlayer == nullptr && world != nullptr && world->multiplayerWorld)
         transferredPlayer = thePlayer;
-    if (oldWorld != nullptr && transferredPlayer != nullptr)
-        oldWorld->detachEntityForWorldChange(transferredPlayer);
-    if (oldWorld != nullptr && thePlayer2 != nullptr)
-    {
-        if (oldWorld->getWorldInfo() != nullptr)
-        {
-            NBTTagCompound *p2Tag = new NBTTagCompound();
-            thePlayer2->writeToNBT(p2Tag);
-            oldWorld->getWorldInfo()->setPlayer2NBTTagCompound(p2Tag);
-        }
-        oldWorld->detachEntityForWorldChange(thePlayer2);
-    }
 
     for (int pIdx = 0; pIdx < 2; ++pIdx)
     {
@@ -2373,6 +2388,25 @@ void Minecraft::changeWorld(World *world, const std::string &s, EntityPlayerSP *
             playerScreens[pIdx] = nullptr;
         }
     }
+
+    if (screenOwnedByPlayer2)
+        screenOwnedByPlayer2 = false;
+
+    if (thePlayerOne != nullptr)
+        thePlayer = thePlayerOne;
+
+    if (oldWorld != nullptr && thePlayer2 != nullptr)
+    {
+        if (oldWorld->getWorldInfo() != nullptr)
+        {
+            NBTTagCompound *p2Tag = new NBTTagCompound();
+            thePlayer2->writeToNBT(p2Tag);
+            oldWorld->getWorldInfo()->setPlayer2NBTTagCompound(p2Tag);
+        }
+        oldWorld->detachEntityForWorldChange(thePlayer2);
+    }
+    if (oldWorld != nullptr && transferredPlayer != nullptr)
+        oldWorld->detachEntityForWorldChange(transferredPlayer);
 
     statFileWriter->prepareStatsForSync();
     statFileWriter->syncStats();
@@ -2464,8 +2498,6 @@ void Minecraft::changeWorld(World *world, const std::string &s, EntityPlayerSP *
         thePlayerOne = thePlayer;
         if (thePlayer2 != nullptr)
         {
-            if (oldWorld != nullptr)
-                oldWorld->detachEntityForWorldChange(thePlayer2);
             delete thePlayer2;
             thePlayer2 = nullptr;
         }
@@ -2484,8 +2516,6 @@ void Minecraft::changeWorld(World *world, const std::string &s, EntityPlayerSP *
         thePlayerOne = nullptr;
         if (thePlayer2 != nullptr)
         {
-            if (oldWorld != nullptr)
-                oldWorld->detachEntityForWorldChange(thePlayer2);
             delete thePlayer2;
             thePlayer2 = nullptr;
         }

@@ -1479,6 +1479,9 @@ void EntityRenderer::updateCameraAndRender(float partialTicks)
 #endif
         renderClear(RenderClearMask::Depth);  // 256 = GL_DEPTH_BUFFER_BIT
 
+#if PLATFORM_PS2
+        ps2SetMenuPad(mc->isScreenOwnedByPlayer2() ? 1 : 0);
+#endif
         mc->currentScreen->drawScreen(scaledMouseX, scaledMouseY, partialTicks);
 
 #if PLATFORM_HAS_VIRTUAL_KEYBOARD
@@ -1492,6 +1495,9 @@ void EntityRenderer::updateCameraAndRender(float partialTicks)
         {
             mc->currentScreen->guiParticles->renderParticles(partialTicks);
         }
+#if PLATFORM_PS2
+        ps2SetMenuPad(0);
+#endif
 #if PLATFORM_PS2 && MC_LOG_LEVEL > 2
         platformProfileDrawCategory(PlatformDrawCategory::Gui, screenDrawStart);
 #endif
@@ -1555,10 +1561,11 @@ void EntityRenderer::renderSplitScreen(float partialTicks, int64_t renderTimeLim
             int scaledMouseX = (mouseX * scaledWidth) / mc->displayWidth;
             int scaledMouseY = (mouseY * scaledHeight) / mc->displayHeight;
 
-            mc->ingameGUI->renderGameOverlay(partialTicks, mc->currentScreen != nullptr,
+            GuiScreen *pScreen = mc->getPlayerScreen(i);
+            const bool hasScreen = (mc->currentScreen != nullptr || pScreen != nullptr);
+            mc->ingameGUI->renderGameOverlay(partialTicks, hasScreen,
                                              scaledMouseX, scaledMouseY);
 
-            GuiScreen *pScreen = mc->getPlayerScreen(i);
             if (pScreen != nullptr)
             {
 #if PLATFORM_GUI_FORCE_DEPTH_DISABLED
@@ -1578,6 +1585,10 @@ void EntityRenderer::renderSplitScreen(float partialTicks, int64_t renderTimeLim
             }
         }
     }
+
+#if PLATFORM_PS2
+    ps2SetMenuPad(0);
+#endif
 
     viewportOffsetX = 0;
     viewportOffsetY = 0;

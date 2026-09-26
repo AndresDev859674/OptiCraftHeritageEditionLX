@@ -159,10 +159,15 @@ NBTTagCompound *WorldInfo::getNBTTagCompoundWithPlayer(const std::vector<EntityP
 	EntityPlayer *entityplayer2 = nullptr;
 	NBTTagCompound *nbttagcompound1 = nullptr;
 	NBTTagCompound *nbttagcompound2 = nullptr;
-	if (!list.empty())
-		entityplayer1 = list[0];
-	if (list.size() > 1)
-		entityplayer2 = list[1];
+	for (EntityPlayer *p : list)
+	{
+		if (p == nullptr)
+			continue;
+		if (p->username == "Player 2")
+			entityplayer2 = p;
+		else if (entityplayer1 == nullptr)
+			entityplayer1 = p;
+	}
 
 	if (entityplayer1 != nullptr)
 	{

@@ -13,6 +13,7 @@
 #include "net/minecraft/src/GameSettings.h"
 #include "net/minecraft/src/skin/SkinManager.h"
 #include "net/minecraft/src/GuiInventory.h"
+#include "net/minecraft/src/GuiContainerCreative.h"
 #include "net/minecraft/src/GuiIngame.h"
 #include "net/minecraft/src/InventoryPlayer.h"
 #include "net/minecraft/src/FoodStats.h"
@@ -147,6 +148,10 @@ void leavePlayer2(Minecraft *mc)
     if (mc == nullptr)
         return;
 
+    // 1. Close Player 2 screen first while player instance is still valid
+    if (mc->getPlayerScreen(1) != nullptr)
+        mc->closePlayerScreen(1);
+
     if (mc->thePlayer2 != nullptr)
     {
         if (mc->theWorld != nullptr && mc->theWorld->getWorldInfo() != nullptr)
@@ -165,9 +170,6 @@ void leavePlayer2(Minecraft *mc)
 
     if (mc->thePlayerOne != nullptr)
         mc->thePlayer = mc->thePlayerOne;
-
-    if (mc->getPlayerScreen(1) != nullptr)
-        mc->closePlayerScreen(1);
 
     mc->setSplitScreenActive(false);
     mc->setScreenOwnedByPlayer2(false);
@@ -203,6 +205,9 @@ void tick(Minecraft *mc)
     // Auto-respawn if Player 2 is dead
     if (p2->isDead || p2->getHealth() <= 0)
     {
+        if (mc->isPlayerScreenActive(1))
+            mc->closePlayerScreen(1);
+
         p2->isDead = false;
         p2->deathTime = 0;
         p2->setHealth(20);
@@ -251,7 +256,8 @@ void tick(Minecraft *mc)
         }
         if (tickPressed & PS2_PAD_SQUARE)
         {
-            if (dynamic_cast<GuiInventory *>(mc->getPlayerScreen(1)) != nullptr)
+            if (dynamic_cast<GuiInventory *>(mc->getPlayerScreen(1)) != nullptr ||
+                dynamic_cast<GuiContainerCreative *>(mc->getPlayerScreen(1)) != nullptr)
             {
                 mc->closePlayerScreen(1);
                 return;
@@ -264,7 +270,10 @@ void tick(Minecraft *mc)
     {
         if (mc->currentScreen == nullptr && !mc->isPlayerScreenActive(1))
         {
-            mc->displayPlayerScreen(1, new GuiInventory(p2));
+            if (mc->playerController != nullptr && mc->playerController->isInCreativeMode())
+                mc->displayPlayerScreen(1, new GuiContainerCreative(p2));
+            else
+                mc->displayPlayerScreen(1, new GuiInventory(p2));
             return;
         }
     }

@@ -997,16 +997,16 @@ void EntityRenderer::setupCameraTransform(float partialTicks, int anaglyphPass)
     if (mc->isSplitScreenActive() && mc->thePlayer2 != nullptr)
     {
         const bool verticalSplit = mc->gameSettings != nullptr && mc->gameSettings->splitscreenVertical;
-        if (verticalSplit)
+        if (mc->gameSettings->widescreen)
         {
-            projectionAspect *= 0.5;
-        }
-        else if (mc->gameSettings->widescreen)
-        {
-            projectionAspect *= 2.0;
+            if (verticalSplit)
+                projectionAspect *= 0.5;
+            else
+                projectionAspect *= 2.0;
         }
     }
 #endif
+    currentProjectionAspect = static_cast<float>(projectionAspect);
     
     renderMatrixMode(RenderMatrixMode::Projection);
     renderLoadIdentity();
@@ -1087,22 +1087,6 @@ void EntityRenderer::renderHand(float partialTicks, int anaglyphPass)
     if (debugViewDirection > 0)
         return;
 
-    // [WII 16:9] Utiliza projectionAspect idéntico al de la cámara del mundo para que la mano
-    // en primera persona no sufra ensanchamiento visual en modo panorámico.
-#if PLATFORM_FLOAT_VERTEX_MATH
-    float projectionAspect = static_cast<float>(ConsoleAspectRatio::getProjectionAspect(
-        mc->displayWidth, mc->displayHeight, mc->gameSettings->widescreen));
-#else
-    double projectionAspect = ConsoleAspectRatio::getProjectionAspect(
-        mc->displayWidth, mc->displayHeight, mc->gameSettings->widescreen);
-#endif
-#if defined(PS2_PLATFORM)
-    if (mc->isSplitScreenActive() && mc->thePlayer2 != nullptr && mc->gameSettings->widescreen)
-    {
-        projectionAspect *= 2.0;
-    }
-#endif
-
     renderMatrixMode(RenderMatrixMode::Projection);
     renderLoadIdentity();
 
@@ -1119,7 +1103,7 @@ void EntityRenderer::renderHand(float partialTicks, int anaglyphPass)
     }
 
     perspectiveGL(getFOVModifier(partialTicks, false),
-                  projectionAspect,
+                  currentProjectionAspect,
                   PLATFORM_NEAR_PLANE, farPlaneDistance * 2.0f);
 
     if (mc->playerController != nullptr && mc->playerController->func_35643_e())
@@ -1576,7 +1560,9 @@ void EntityRenderer::renderSplitScreen(float partialTicks, int64_t renderTimeLim
 #if PLATFORM_PS2
                 ps2SetMenuPad(i);
 #endif
-                pScreen->drawScreen(scaledMouseX, scaledMouseY, partialTicks);
+                const int curMouseX = static_cast<int>(mc->getPlayerCursorX(i));
+                const int curMouseY = static_cast<int>(mc->getPlayerCursorY(i));
+                pScreen->drawScreen(curMouseX, curMouseY, partialTicks);
 
                 if (pScreen->guiParticles != nullptr)
                 {

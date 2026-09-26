@@ -39,13 +39,13 @@ public:
 	// A container can keep controller navigation inside a specialized slot grid.
 	// Returning nullptr uses the normal geometric navigation.
 	virtual Slot *getControllerNavigationTarget(Slot *selected, int_t dirX, int_t dirY);
+	virtual void handleMouseClick(Slot *slot, int_t slotId, int_t button, bool shift);
 
 private:
 	bool getIsMouseOverSlot(Slot *slot, int_t mouseX, int_t mouseY);
 
 protected:
 	void mouseClicked(int_t x, int_t y, int_t button) override;
-	virtual void handleMouseClick(Slot *slot, int_t slotId, int_t button, bool shift);
 	void mouseMovedOrUp(int_t x, int_t y, int_t button) override;
 	void keyTyped(char_t c, int_t key) override;
 

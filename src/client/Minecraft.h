@@ -131,6 +131,10 @@ public:
     GuiScreen *getPlayerScreen(int playerIndex) const;
     void closePlayerScreen(int playerIndex);
     bool isPlayerScreenActive(int playerIndex) const;
+    float getPlayerCursorX(int playerIndex) const;
+    float getPlayerCursorY(int playerIndex) const;
+    void setPlayerCursor(int playerIndex, float x, float y);
+    void resetPlayerCursor(int playerIndex, float defaultX, float defaultY);
 
     void clickMouse(int_t i, bool flag);
     void clickMouse(int_t i);
@@ -206,6 +210,10 @@ public:
     bool screenOwnedByPlayer2;
     bool splitScreenActive;
     GuiScreen *playerScreens[2];
+    float playerCursorX[2];
+    float playerCursorY[2];
+    bool playerCursorInitialized[2];
+    int ignorePauseMenuTicks;
 #if !PLATFORM_PS2
     SDL_Window *window;
 #endif

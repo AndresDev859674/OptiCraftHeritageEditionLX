@@ -236,20 +236,10 @@ void tick(Minecraft *mc)
         return;
     }
 
-    // START button (Pause menu)
-    if ((tickPressed & PS2_PAD_START) && mc->currentScreen == nullptr)
-    {
-        mc->setScreenOwnedByPlayer2(true);
-        ps2SetMenuPad(1);
-        ps2SetMenuOwnerPad(1);
-        mc->displayInGameMenu();
-        return;
-    }
-
     // Personal screen closing for Player 2
     if (mc->isPlayerScreenActive(1))
     {
-        if (tickPressed & PS2_PAD_CIRCLE)
+        if (tickPressed & (PS2_PAD_CIRCLE | PS2_PAD_START))
         {
             mc->closePlayerScreen(1);
             return;
@@ -263,6 +253,16 @@ void tick(Minecraft *mc)
                 return;
             }
         }
+    }
+
+    // START button (Pause menu)
+    if ((tickPressed & PS2_PAD_START) && mc->currentScreen == nullptr)
+    {
+        mc->setScreenOwnedByPlayer2(true);
+        ps2SetMenuPad(1);
+        ps2SetMenuOwnerPad(1);
+        mc->displayInGameMenu();
+        return;
     }
 
     // Square button: Open P2 Inventory independently

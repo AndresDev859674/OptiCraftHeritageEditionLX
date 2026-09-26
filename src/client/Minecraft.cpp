@@ -331,6 +331,13 @@ Minecraft::Minecraft(int_t width, int_t height, bool flag) :
 
     playerScreens[0] = nullptr;
     playerScreens[1] = nullptr;
+    playerCursorX[0] = 160.0f;
+    playerCursorY[0] = 120.0f;
+    playerCursorInitialized[0] = false;
+    playerCursorX[1] = 160.0f;
+    playerCursorY[1] = 120.0f;
+    playerCursorInitialized[1] = false;
+    ignorePauseMenuTicks = 0;
 
     StatList::initStats();
     PLATFORM_BOOT_LOG(PLATFORM_BOOT_PREFIX " ctor: done\n");
@@ -1418,6 +1425,7 @@ void Minecraft::displayPlayerScreen(int playerIndex, GuiScreen *screen)
         int w = scaledresolution.getScaledWidth();
         int h = scaledresolution.getScaledHeight();
         screen->setWorldAndResolution(this, w, h);
+        resetPlayerCursor(playerIndex, static_cast<float>(w) * 0.5f, static_cast<float>(h) * 0.5f);
     }
     else
     {
@@ -1435,6 +1443,13 @@ GuiScreen *Minecraft::getPlayerScreen(int playerIndex) const
 void Minecraft::closePlayerScreen(int playerIndex)
 {
     displayPlayerScreen(playerIndex, nullptr);
+    if (playerIndex == 0)
+    {
+        ignorePauseMenuTicks = 3;
+#if PLATFORM_PS2 || PLATFORM_WII
+        lwjgl::Keyboard::clearEvents();
+#endif
+    }
 }
 
 bool Minecraft::isPlayerScreenActive(int playerIndex) const
@@ -1442,6 +1457,40 @@ bool Minecraft::isPlayerScreenActive(int playerIndex) const
     if (playerIndex >= 0 && playerIndex < 2)
         return playerScreens[playerIndex] != nullptr;
     return false;
+}
+
+float Minecraft::getPlayerCursorX(int playerIndex) const
+{
+    if (playerIndex >= 0 && playerIndex < 2)
+        return playerCursorX[playerIndex];
+    return 0.0f;
+}
+
+float Minecraft::getPlayerCursorY(int playerIndex) const
+{
+    if (playerIndex >= 0 && playerIndex < 2)
+        return playerCursorY[playerIndex];
+    return 0.0f;
+}
+
+void Minecraft::setPlayerCursor(int playerIndex, float x, float y)
+{
+    if (playerIndex >= 0 && playerIndex < 2)
+    {
+        playerCursorX[playerIndex] = x;
+        playerCursorY[playerIndex] = y;
+        playerCursorInitialized[playerIndex] = true;
+    }
+}
+
+void Minecraft::resetPlayerCursor(int playerIndex, float defaultX, float defaultY)
+{
+    if (playerIndex >= 0 && playerIndex < 2)
+    {
+        playerCursorX[playerIndex] = defaultX;
+        playerCursorY[playerIndex] = defaultY;
+        playerCursorInitialized[playerIndex] = true;
+    }
 }
 
 // ─── Mouse click helpers ──────────────────────────────────────────────────────
@@ -1817,6 +1866,9 @@ void Minecraft::runTick()
         displayGuiScreen(nullptr);
     }
 
+    if (ignorePauseMenuTicks > 0)
+        --ignorePauseMenuTicks;
+
     if (currentScreen != nullptr)
     {
         leftClickCounter = 10000;
@@ -1850,7 +1902,7 @@ void Minecraft::runTick()
 
         if (isPlayerScreenActive(0))
         {
-            if (pad0PressedInTick & PS2_PAD_CIRCLE)
+            if (pad0PressedInTick & (PS2_PAD_CIRCLE | PS2_PAD_START))
             {
                 closePlayerScreen(0);
             }
@@ -1953,7 +2005,11 @@ void Minecraft::runTick()
             }
 
             if (eventKey == lwjgl::Keyboard::KEY_ESCAPE)
+            {
+                if (ignorePauseMenuTicks > 0)
+                    continue;
                 displayInGameMenu();
+            }
             if (eventKey == lwjgl::Keyboard::KEY_S && lwjgl::Keyboard::isKeyDown(lwjgl::Keyboard::KEY_F3))
                 forceReload();
             if (eventKey == lwjgl::Keyboard::KEY_A && lwjgl::Keyboard::isKeyDown(lwjgl::Keyboard::KEY_F3))

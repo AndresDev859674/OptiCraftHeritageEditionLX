@@ -46,6 +46,7 @@ public:
 
 protected:
 	virtual void handleSpecializedMenuInput();
+	void handleSplitscreenPlayerInput();
 
 public:
 	virtual void handleMouseInput();

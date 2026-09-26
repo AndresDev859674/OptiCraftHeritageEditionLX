@@ -171,6 +171,7 @@ private:
     ItemRenderer* itemRenderer;
     int viewportOffsetX = 0;
     int viewportOffsetY = 0;
+    float currentProjectionAspect = 1.3333334f;
 
     // OptiFine: ultimo worldProvider para el que se aplico el brillo; cuando cambia
     // (p.ej. cambio de dimension) se vuelve a llamar a updateWorldLightLevels().

@@ -7,6 +7,7 @@
 #include "Container.h"
 #include "GuiContainer.h"
 #include "Slot.h"
+#include "Minecraft.h"
 #include "platform/ConsoleInputClock.h"
 #include "platform/Input.h"
 
@@ -134,6 +135,11 @@ void ContainerSlotNavigator::moveMenuCursorToSelection()
     {
         platformSetMenuCursor(guiX * layout.displayWidth / layout.screenWidth,
                               guiY * layout.displayHeight / layout.screenHeight);
+    }
+    Minecraft *mc = Minecraft::getMinecraft();
+    if (mc != nullptr)
+    {
+        mc->setPlayerCursor(m_padPort, static_cast<float>(guiX), static_cast<float>(guiY));
     }
 }
 

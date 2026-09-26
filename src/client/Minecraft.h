@@ -74,6 +74,7 @@ public:
     void shutdown();
 
     void displayGuiScreen(GuiScreen *guiscreen);
+    void scheduleGuiScreenDeletion(GuiScreen *screen);
     void purgeOwnedGuiScreens(); // free abandoned menu screens the Java GC would have collected
     void displayInGameMenu();
     void setIngameFocus();

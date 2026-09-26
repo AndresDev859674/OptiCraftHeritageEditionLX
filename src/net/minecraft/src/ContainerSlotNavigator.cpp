@@ -218,6 +218,9 @@ Slot *ContainerSlotNavigator::pickSlot(int_t originX, int_t originY, int_t dirX,
 
 void ContainerSlotNavigator::tick()
 {
+    if (!isActive() || screen == nullptr || screen->inventorySlots == nullptr || screen->inventorySlots->slots.empty())
+        return;
+
     tickWithInput(platformTextInputSnapshot(m_padPort));
 }
 

@@ -361,6 +361,9 @@ void GuiContainer::mouseClicked(int_t x, int_t y, int_t button)
 	if (!mc->isSplitScreenActive() && mc != nullptr && mc->gameSettings != nullptr && mc->gameSettings->legacyUI
 	    && navigator.controllerSelectionActive() && (button == 0 || button == 1))
 		return;
+	Slot *controllerSlot = nullptr;
+	if (navigator.controllerSelectionActive())
+		controllerSlot = navigator.selectedSlot();
 	navigator.notePointerActivity();
 #endif
 	GuiScreen::mouseClicked(x, y, button);
@@ -371,8 +374,8 @@ void GuiContainer::mouseClicked(int_t x, int_t y, int_t button)
 	{
 		Slot *slot = nullptr;
 #if PLATFORM_PS2 || PLATFORM_WII
-		if (navigator.controllerSelectionActive())
-			slot = navigator.selectedSlot();
+		if (controllerSlot != nullptr)
+			slot = controllerSlot;
 #endif
 		if (slot == nullptr)
 			slot = getSlotAtPosition(x, y);

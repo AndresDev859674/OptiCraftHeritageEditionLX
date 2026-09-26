@@ -137,10 +137,18 @@ void GuiContainer::drawScreen(int_t mouseX, int_t mouseY, float_t partialTick)
 	}
 
 	Slot *selectedSlot = controllerSlot;
-	if (selectedSlot != nullptr && navigator.consumePrimaryClick())
-		handleMouseClick(selectedSlot, selectedSlot->slotNumber, 0, false);
-	if (selectedSlot != nullptr && navigator.consumeSecondaryClick())
-		handleMouseClick(selectedSlot, selectedSlot->slotNumber, 1, false);
+	if (mc == nullptr || !mc->isSplitScreenActive())
+	{
+		if (selectedSlot != nullptr && navigator.consumePrimaryClick())
+			handleMouseClick(selectedSlot, selectedSlot->slotNumber, 0, false);
+		if (selectedSlot != nullptr && navigator.consumeSecondaryClick())
+			handleMouseClick(selectedSlot, selectedSlot->slotNumber, 1, false);
+	}
+	else
+	{
+		navigator.consumePrimaryClick();
+		navigator.consumeSecondaryClick();
+	}
 #endif
 
 	drawGuiContainerBackgroundLayer(partialTick);
@@ -239,6 +247,10 @@ void GuiContainer::drawScreen(int_t mouseX, int_t mouseY, float_t partialTick)
 				tooltipX = controllerSlot->xDisplayPosition + 22;
 				tooltipY = controllerSlot->yDisplayPosition - 10;
 			}
+			if (guiY + tooltipY + 24 > height)
+				tooltipY = height - guiY - 24;
+			if (guiY + tooltipY < 0)
+				tooltipY = -guiY;
 #endif
 			int_t tooltipHeight = 8;
 			if (information.size() > 1)
@@ -346,7 +358,7 @@ void GuiContainer::mouseClicked(int_t x, int_t y, int_t button)
 	// Console confirm buttons are exposed both as controller input and mouse
 	// clicks. When D-pad selection owns the inventory, ignore the synthesized
 	// mouse edge so the selected slot is activated exactly once.
-	if (mc != nullptr && mc->gameSettings != nullptr && mc->gameSettings->legacyUI
+	if (!mc->isSplitScreenActive() && mc != nullptr && mc->gameSettings != nullptr && mc->gameSettings->legacyUI
 	    && navigator.controllerSelectionActive() && (button == 0 || button == 1))
 		return;
 	navigator.notePointerActivity();
@@ -357,13 +369,20 @@ void GuiContainer::mouseClicked(int_t x, int_t y, int_t button)
 
 	if (button == 0 || button == 1)
 	{
-		Slot *slot = getSlotAtPosition(x, y);
+		Slot *slot = nullptr;
+#if PLATFORM_PS2 || PLATFORM_WII
+		if (navigator.controllerSelectionActive())
+			slot = navigator.selectedSlot();
+#endif
+		if (slot == nullptr)
+			slot = getSlotAtPosition(x, y);
+
 		int_t guiX = guiLeft;
 		int_t guiY = guiTop;
 		bool outsideGui = x < guiX || y < guiY || x >= guiX + xSize || y >= guiY + ySize;
 		int_t slotId = -1;
 		if (slot != nullptr) slotId = slot->slotNumber;
-		if (outsideGui)      slotId = -999;
+		if (outsideGui && slot == nullptr) slotId = -999;
 		if (slotId != -1)
 		{
 			bool shift = slotId != -999 && (lwjgl::Keyboard::isKeyDown(42) || lwjgl::Keyboard::isKeyDown(54));

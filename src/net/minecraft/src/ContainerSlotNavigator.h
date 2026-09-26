@@ -3,6 +3,7 @@
 #if defined(PS2_PLATFORM) || defined(WII_PLATFORM)
 
 #include "java/Type.h"
+#include "platform/Input.h"
 
 class GuiContainer;
 class Slot;
@@ -30,6 +31,7 @@ public:
     bool isActive() const { return screen != nullptr; }
 
     void tick();
+    void tickWithInput(const PlatformTextInputSnapshot &pad);
 
     Slot *selectedSlot() const { return selected; }
     bool controllerSelectionActive() const { return controllerActive && selected != nullptr; }

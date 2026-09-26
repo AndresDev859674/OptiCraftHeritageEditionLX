@@ -1906,12 +1906,6 @@ void Minecraft::runTick()
             {
                 closePlayerScreen(0);
             }
-            else if ((pad0PressedInTick & PS2_PAD_SQUARE) &&
-                     (dynamic_cast<GuiInventory *>(getPlayerScreen(0)) != nullptr ||
-                      dynamic_cast<GuiContainerCreative *>(getPlayerScreen(0)) != nullptr))
-            {
-                closePlayerScreen(0);
-            }
         }
 #endif
 
@@ -1942,6 +1936,9 @@ void Minecraft::runTick()
         clientPhaseStartNs = System::nanoTime();
         while (lwjgl::Mouse::next())
         {
+            if (isPlayerScreenActive(0))
+                continue;
+
             const int_t eventButton = lwjgl::Mouse::getEventButton();
             const bool eventState = lwjgl::Mouse::getEventButtonState();
             if (eventButton >= 0)

@@ -244,15 +244,7 @@ void tick(Minecraft *mc)
             mc->closePlayerScreen(1);
             return;
         }
-        if (tickPressed & PS2_PAD_SQUARE)
-        {
-            if (dynamic_cast<GuiInventory *>(mc->getPlayerScreen(1)) != nullptr ||
-                dynamic_cast<GuiContainerCreative *>(mc->getPlayerScreen(1)) != nullptr)
-            {
-                mc->closePlayerScreen(1);
-                return;
-            }
-        }
+        return;
     }
 
     // START button (Pause menu)

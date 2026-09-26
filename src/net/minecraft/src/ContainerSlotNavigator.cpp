@@ -218,6 +218,11 @@ Slot *ContainerSlotNavigator::pickSlot(int_t originX, int_t originY, int_t dirX,
 
 void ContainerSlotNavigator::tick()
 {
+    tickWithInput(platformTextInputSnapshot(m_padPort));
+}
+
+void ContainerSlotNavigator::tickWithInput(const PlatformTextInputSnapshot &pad)
+{
     if (!isActive() || screen->inventorySlots == nullptr || screen->inventorySlots->slots.empty())
         return;
 
@@ -231,39 +236,34 @@ void ContainerSlotNavigator::tick()
         clearControllerSelection();
 #endif
 
-    const PlatformTextInputSnapshot pad = platformTextInputSnapshot(m_padPort);
     if (!pad.connected)
         return;
+
+    Minecraft *mc = Minecraft::getMinecraft();
+    const bool splitScreen = (mc != nullptr && mc->isSplitScreenActive());
 
     const unsigned int keyLeft = PLATFORM_TEXT_LEFT;
     const unsigned int keyRight = PLATFORM_TEXT_RIGHT;
     const unsigned int keyUp = PLATFORM_TEXT_UP;
     const unsigned int keyDown = PLATFORM_TEXT_DOWN;
 
-    // The confirm buttons also arrive as synthesized mouse clicks at the
-    // cursor, and GuiContainer::mouseClicked drops that edge only while the
-    // controller owns the selection. While the pointer is an active input and
-    // the D-pad has not taken over since its last motion, the click belongs to
-    // the pointed slot: claiming it here sent every press to the D-pad slot
-    // (the first slot of a fresh screen) instead. GameCube and Classic only
-    // expose that mouse edge while their left-stick cursor owns the container.
-    const bool pointerOwnsClick = platformMenuPointerActive() && !controllerActive;
-    if (!pointerOwnsClick && (pad.pressed & PLATFORM_TEXT_TYPE) != 0)
+    // In splitscreen, clicks are processed directly in handleSplitscreenPlayerInput()
+    // rather than deferred to drawScreen().
+    if (!splitScreen)
     {
-        activateControllerSelection();
-        if (controllerSelectionActive())
-            pendingPrimary = true;
-    }
-    // Secondary click (split stack / place one) on BACK: Square on PS2, B on
-    // a GameCube pad, Classic Controller or Wiimote. The Wiimote's B also
-    // reaches here as mouse button 1 through the pointer; GuiContainer::
-    // mouseClicked drops that edge while the controller owns the selection,
-    // the same way it does for A, so the slot is not clicked twice.
-    if (!pointerOwnsClick && (pad.pressed & PLATFORM_TEXT_BACK) != 0)
-    {
-        activateControllerSelection();
-        if (controllerSelectionActive())
-            pendingSecondary = true;
+        const bool pointerOwnsClick = platformMenuPointerActive() && !controllerActive;
+        if (!pointerOwnsClick && (pad.pressed & PLATFORM_TEXT_TYPE) != 0)
+        {
+            activateControllerSelection();
+            if (controllerSelectionActive())
+                pendingPrimary = true;
+        }
+        if (!pointerOwnsClick && (pad.pressed & PLATFORM_TEXT_BACK) != 0)
+        {
+            activateControllerSelection();
+            if (controllerSelectionActive())
+                pendingSecondary = true;
+        }
     }
 
     int_t dirX = 0;

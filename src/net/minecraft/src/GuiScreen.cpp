@@ -666,9 +666,17 @@ void GuiScreen::handleSplitscreenPlayerInput()
 		return;
 
 	ContainerSlotNavigator &navigator = ContainerSlotNavigator::instance(pIdx);
-	if (!platformTextInputExclusive())
-		navigator.tick();
 
+	// Read input snapshot EXACTLY ONCE this frame
+	const PlatformTextInputSnapshot input = platformTextInputSnapshot(pIdx);
+	if (!input.connected)
+		return;
+
+	// Forward input snapshot to navigator
+	if (!platformTextInputExclusive())
+		navigator.tickWithInput(input);
+
+	// Left stick moves personal cursor
 	const PlatformGamepadSnapshot pad = platformGamepadSnapshot(pIdx);
 	if (pad.connected)
 	{
@@ -691,36 +699,46 @@ void GuiScreen::handleSplitscreenPlayerInput()
 	const int curMouseX = static_cast<int>(mc->getPlayerCursorX(pIdx));
 	const int curMouseY = static_cast<int>(mc->getPlayerCursorY(pIdx));
 
-	const PlatformTextInputSnapshot input = platformTextInputSnapshot(pIdx);
-	if (!input.connected)
-		return;
+	GuiContainer *gc = dynamic_cast<GuiContainer *>(this);
 
+	static bool s_crossHeld[2] = { false, false };
+	static bool s_squareHeld[2] = { false, false };
+
+	// 1. Cross (Primary action / Left click: pickup stack, place stack, click button)
 	if (input.pressed & PLATFORM_TEXT_TYPE)
 	{
+		s_crossHeld[pIdx] = true;
 		mouseClicked(curMouseX, curMouseY, 0);
 	}
-	else if (!(input.held & PLATFORM_TEXT_TYPE))
+	else if (s_crossHeld[pIdx] && !(input.held & PLATFORM_TEXT_TYPE))
 	{
+		s_crossHeld[pIdx] = false;
 		mouseMovedOrUp(curMouseX, curMouseY, 0);
 	}
 
+	// 2. Square (Secondary action / Right click: split stack, take half, place 1)
 	if (input.pressed & PLATFORM_TEXT_BACK)
 	{
+		s_squareHeld[pIdx] = true;
 		mouseClicked(curMouseX, curMouseY, 1);
 	}
-	else if (!(input.held & PLATFORM_TEXT_BACK))
+	else if (s_squareHeld[pIdx] && !(input.held & PLATFORM_TEXT_BACK))
 	{
+		s_squareHeld[pIdx] = false;
 		mouseMovedOrUp(curMouseX, curMouseY, 1);
 	}
 
+	// 3. Triangle (Quick move / Shift-click)
 	if (input.pressed & PLATFORM_TEXT_SHIFT)
 	{
-		GuiContainer *gc = dynamic_cast<GuiContainer *>(this);
 		if (gc != nullptr)
 		{
-			Slot *slot = gc->getSlotAtPosition(curMouseX, curMouseY);
-			if (slot == nullptr && navigator.controllerSelectionActive())
+			Slot *slot = nullptr;
+			if (navigator.controllerSelectionActive())
 				slot = navigator.selectedSlot();
+			if (slot == nullptr)
+				slot = gc->getSlotAtPosition(curMouseX, curMouseY);
+
 			if (slot != nullptr)
 			{
 				gc->handleMouseClick(slot, slot->slotNumber, 0, true);
@@ -728,6 +746,7 @@ void GuiScreen::handleSplitscreenPlayerInput()
 		}
 	}
 
+	// 4. Circle or Start (Close personal inventory screen)
 	if (input.pressed & (PLATFORM_TEXT_CLOSE | PLATFORM_TEXT_ENTER))
 	{
 		mc->closePlayerScreen(pIdx);

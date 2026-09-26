@@ -664,13 +664,14 @@ int_t getHeight() { return s_mode.getHeight(); }
 void processMessages()
 {
     Minecraft* mc = Minecraft::getMinecraft();
-    bool inMenu = (mc && (mc->currentScreen != nullptr || mc->isPlayerScreenActive(0)));
+    bool inGlobalMenu = (mc && mc->currentScreen != nullptr);
+    bool inMenu = inGlobalMenu || (mc && !mc->isSplitScreenActive() && mc->isPlayerScreenActive(0));
     const bool specializedMenuNavigation = inMenu &&
         ((mc->currentScreen != nullptr && mc->currentScreen->usesSpecializedMenuNavigationForPlatform()) ||
          (mc->getPlayerScreen(0) != nullptr && mc->getPlayerScreen(0)->usesSpecializedMenuNavigationForPlatform()));
 
-    // Ensure the game captures mouse (camera) whenever no menu is open.
-    if (!inMenu && mc && !mc->inGameHasFocus)
+    // Ensure the game captures mouse (camera) whenever no global menu is open.
+    if (!inGlobalMenu && mc && !mc->inGameHasFocus)
         mc->setIngameFocus();
 
     Ps2Input::poll(inMenu, specializedMenuNavigation);

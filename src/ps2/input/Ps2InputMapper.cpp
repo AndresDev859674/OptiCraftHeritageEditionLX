@@ -10,6 +10,7 @@
 #include "ps2/input/Ps2PadKeyCodes.h"
 #include "lwjgl/Keyboard.h"
 #include "lwjgl/Mouse.h"
+#include "client/Minecraft.h"
 #include <libpad.h>
 #include <stdio.h>
 
@@ -276,33 +277,55 @@ void updateGameplay(const Ps2PadSnapshot& p) {
     setKey(PS2_KEY_DPAD_LEFT, moveX < -0.05f || (p.held & PAD_LEFT));
     setKey(PS2_KEY_DPAD_RIGHT, moveX >  0.05f || (p.held & PAD_RIGHT));
 #endif
-    setKey(PS2_KEY_CROSS, (p.held & PAD_CROSS) != 0);
-    setKey(PS2_KEY_CIRCLE, (p.held & PAD_CIRCLE) != 0);
-    setKey(PS2_KEY_TRIANGLE, (p.held & PAD_TRIANGLE) != 0);
-    setKey(PS2_KEY_SQUARE, (p.held & PAD_SQUARE) != 0);
-    setKey(PS2_KEY_L1, (p.held & PAD_L1) != 0);
-    setKey(PS2_KEY_R1, (p.held & PAD_R1) != 0);
-    setKey(PS2_KEY_L2, (p.held & PAD_L2) != 0);
-    setKey(PS2_KEY_R2, (p.held & PAD_R2) != 0);
-    setKey(PS2_KEY_L3, (p.held & PAD_L3) != 0);
-    setKey(PS2_KEY_R3, (p.held & PAD_R3) != 0);
+    Minecraft *mc = Minecraft::getMinecraft();
+    const bool p0ScreenActive = (mc != nullptr && mc->isPlayerScreenActive(0));
+    const bool splitscreenActive = (mc != nullptr && mc->isSplitScreenActive());
 
-    if (p.pressed & PAD_R2) lwjgl::Mouse::detail::pushButton(0, true, 0, 0);
-    if (p.released & PAD_R2) lwjgl::Mouse::detail::pushButton(0, false, 0, 0);
-    if (p.pressed & PAD_L2) lwjgl::Mouse::detail::pushButton(1, true, 0, 0);
-    if (p.released & PAD_L2) lwjgl::Mouse::detail::pushButton(1, false, 0, 0);
-    if (p.pressed & PAD_START) { ps2SetMenuPad(0); ps2SetMenuOwnerPad(0); lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_ESCAPE, true); }
-    if (p.released & PAD_START) lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_ESCAPE, false);
-    if (p.pressed & PAD_SQUARE) ps2SetMenuPad(0);
-    if (p.pressed & PAD_R1) lwjgl::Mouse::detail::pushWheel(-1, 0, 0);
-    if (p.pressed & PAD_L1) lwjgl::Mouse::detail::pushWheel(1, 0, 0);
-    if (p.pressed & PAD_R3) lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_F5, true);
-    if (p.released & PAD_R3) lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_F5, false);
-    if (p.pressed & PAD_SELECT) lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_F3, true);
-    if (p.released & PAD_SELECT) lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_F3, false);
+    if (!p0ScreenActive)
+    {
+        setKey(PS2_KEY_CROSS, (p.held & PAD_CROSS) != 0);
+        setKey(PS2_KEY_CIRCLE, (p.held & PAD_CIRCLE) != 0);
+        setKey(PS2_KEY_TRIANGLE, (p.held & PAD_TRIANGLE) != 0);
+        setKey(PS2_KEY_SQUARE, (p.held & PAD_SQUARE) != 0);
+        setKey(PS2_KEY_L1, (p.held & PAD_L1) != 0);
+        setKey(PS2_KEY_R1, (p.held & PAD_R1) != 0);
+        setKey(PS2_KEY_L2, (p.held & PAD_L2) != 0);
+        setKey(PS2_KEY_R2, (p.held & PAD_R2) != 0);
+        setKey(PS2_KEY_L3, (p.held & PAD_L3) != 0);
+        setKey(PS2_KEY_R3, (p.held & PAD_R3) != 0);
 
-    // Gameplay does not use text/menu latches. Clear them so they do not leak into menus.
-    ps2PadClearLatchedPressed(0);
+        if (p.pressed & PAD_R2) lwjgl::Mouse::detail::pushButton(0, true, 0, 0);
+        if (p.released & PAD_R2) lwjgl::Mouse::detail::pushButton(0, false, 0, 0);
+        if (p.pressed & PAD_L2) lwjgl::Mouse::detail::pushButton(1, true, 0, 0);
+        if (p.released & PAD_L2) lwjgl::Mouse::detail::pushButton(1, false, 0, 0);
+        if (p.pressed & PAD_START) { ps2SetMenuPad(0); ps2SetMenuOwnerPad(0); lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_ESCAPE, true); }
+        if (p.released & PAD_START) lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_ESCAPE, false);
+        if (p.pressed & PAD_SQUARE) ps2SetMenuPad(0);
+        if (p.pressed & PAD_R1) lwjgl::Mouse::detail::pushWheel(-1, 0, 0);
+        if (p.pressed & PAD_L1) lwjgl::Mouse::detail::pushWheel(1, 0, 0);
+        if (p.pressed & PAD_R3) lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_F5, true);
+        if (p.released & PAD_R3) lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_F5, false);
+        if (p.pressed & PAD_SELECT) lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_F3, true);
+        if (p.released & PAD_SELECT) lwjgl::Keyboard::detail::pushKey(lwjgl::Keyboard::KEY_F3, false);
+    }
+    else
+    {
+        setKey(PS2_KEY_CROSS, false);
+        setKey(PS2_KEY_CIRCLE, false);
+        setKey(PS2_KEY_TRIANGLE, false);
+        setKey(PS2_KEY_SQUARE, false);
+        setKey(PS2_KEY_L1, false);
+        setKey(PS2_KEY_R1, false);
+        setKey(PS2_KEY_L2, false);
+        setKey(PS2_KEY_R2, false);
+        setKey(PS2_KEY_L3, false);
+        setKey(PS2_KEY_R3, false);
+    }
+
+    // Gameplay does not use text/menu latches. Clear them so they do not leak into menus,
+    // but only when splitscreen or personal screens are not active.
+    if (!p0ScreenActive && !splitscreenActive)
+        ps2PadClearLatchedPressed(0);
 }
 }
 
